@@ -7,18 +7,21 @@ var compression = require("compression");
 // init middleware
 app.use(morgan("dev"));
 app.use(helmet());
-// app.use(compression())
+app.use(compression());
 
 // init db
+require("./database/init.mongodb.js");
 
+const { checkOverLoad } = require("./helper/check.connect.js");
+checkOverLoad();
 // init handle
 
 app.get("/", (req, res) => {
-  const hl  = "Hello World!";
+  const hl = "Hello World!";
   res.status(200).json({
-    message : hl,
-    metadata:hl.repeat(100)
-  })
+    message: hl,
+    metadata: hl.repeat(100),
+  });
 });
 
 module.exports = app;
