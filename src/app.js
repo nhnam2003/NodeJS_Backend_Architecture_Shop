@@ -4,6 +4,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 var compression = require("compression");
 
+require("dotenv").config();
+
 // init middleware
 app.use(morgan("dev"));
 app.use(helmet());
@@ -15,6 +17,7 @@ require("./database/init.mongodb.js");
 const { checkOverLoad } = require("./helper/check.connect.js");
 checkOverLoad();
 // init handle
+
 
 app.get("/", (req, res) => {
   const hl = "Hello World!";

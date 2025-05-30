@@ -12,6 +12,7 @@ const checkOverLoad = () => {
     const numCores = os.cpus().length;
     const memoryUsage = process.memoryUsage().rss;
     const maxConnection = numCores * 5;
+    
     console.log(`Active connection : ${numConnection}`);
     console.log(`NumCores: ${numCores}`);
     console.log(`Memory Usage : ${memoryUsage/1024/1024} MB`);
