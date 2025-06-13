@@ -4,10 +4,11 @@ const shopModel = require("../models/shop.model");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const KeyTokenService = require("./keyToken.service");
-const { createTokenPair } = require("../authentication/authUtils");
+const { createTokenPair, verifyJWT } = require("../authentication/authUtils");
 const { getInfoData } = require("../utils");
-const { BadRequestError } = require("../core/error.response");
+const { BadRequestError, ForbiddenError } = require("../core/error.response");
 const { FindByEmail } = require("../services/shop.service");
+const keyTokenModel = require("../models/keyToken.model");
 
 const roleShop = {
   SHOP: "SHOP",
@@ -17,6 +18,54 @@ const roleShop = {
 };
 
 class AccessService {
+
+  static handlerRefreshToken = async (refreshToken) => {
+    console.log("handle");
+
+    //check token da duoc su dung hay chua
+    const foundToken = await KeyTokenService.findByRefreshTokenUsed(refreshToken)
+    if (foundToken) {
+      //neu co thi kiem tra day la ai
+      const { userId, email } = await verifyJWT(refreshToken, foundToken.publicKey)
+      console.log("[1]{ userId, email }", { userId, email });
+
+      // xoa tat ca token trong keystore
+
+      await KeyTokenService.deleteKeyByUserId(foundToken._id)
+      throw new ForbiddenError('Something wrong happend !! Pls relogin')
+    }
+    //neu khong
+    const holderToken = await KeyTokenService.findByRefreshToken(refreshToken)
+    console.log('refreshToken:', refreshToken)
+
+    if (!holderToken) throw new ForbiddenError('Shop not registed 1')
+
+    //verify token
+    const { userId, email } = await verifyJWT(refreshToken, holderToken.publicKey)
+    console.log("[2]{ userId, email }", { userId, email });
+
+    //check userid
+    const foundShop = await FindByEmail({ email })
+    if (!foundShop) throw new ForbiddenError('Shop not registed 2')
+
+    // create 1 cap token moi
+
+    const tokens = await createTokenPair({ userId, email }, holderToken.publicKey, holderToken.privateKey)
+
+    //update token
+
+    await keyTokenModel.updateOne(
+      { _id: holderToken._id },
+      { $set: { refreshToken: tokens.refreshToken } }
+    );
+
+    return {
+      user: { userId, email },
+      tokens
+    }
+
+  }
+
   static signUp = async ({ name, email, password }) => {
     try {
       const hodelShop = await shopModel.findOne({ email }).lean();

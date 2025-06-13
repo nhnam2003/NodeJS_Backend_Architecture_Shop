@@ -1,8 +1,7 @@
 'use strict'
 
-const mongoose = require('mongoose'); // Erase if already required
+const mongoose = require('mongoose'); 
 
-// Declare the Schema of the Mongo model
 var apiKeySchema = new mongoose.Schema({
     key:{
         type:String,
